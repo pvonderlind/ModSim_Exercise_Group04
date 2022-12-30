@@ -1,9 +1,8 @@
 import numpy as np
 
-from src.ca import AbstractRule
+from ca import AbstractRule
 
 
 class DummyShuffleRule(AbstractRule):
     def apply(self, state: np.ndarray) -> np.ndarray:
-        np.random.shuffle(state)
-        return state
+        return np.roll(state, 1, axis=1)
