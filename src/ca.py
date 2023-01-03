@@ -5,6 +5,13 @@ from tqdm import tqdm
 
 
 class Street:
+    """
+    Represents a street with multiple lanes and
+    multiple cars that have a maximum velocity.
+
+    Cars are represented as integers from values between
+    0 and vmax. Empty cells are represented as -1.
+    """
 
     def __init__(self,
                  lanes: int,
