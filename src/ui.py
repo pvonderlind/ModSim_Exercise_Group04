@@ -10,14 +10,15 @@ from rules import *
 hv.extension('bokeh')
 pn.extension()
 
+
 def plot_state(
-    history: np.ndarray,
-    timestep: int,
-    color_map:Any=cc.bgy,
-    meters_per_cell=4,
-    velocity_max=6,
-    lanes=1,
-    lane_len=100
+        history: np.ndarray,
+        timestep: int,
+        color_map: Any = cc.bgy,
+        meters_per_cell=4,
+        velocity_max=6,
+        lanes=1,
+        lane_len=100
 ) -> hv.HeatMap:
     """
     Plots the Cellular Automata history at a certain point in time as a HeatMap.
@@ -38,7 +39,7 @@ def plot_state(
     hv.HeatMap
         A plot representing the state of the Cellular Automata via a HeatMap.
     """
-    
+
     if timestep >= len(history) or timestep < 0:
         state = np.zeros((lanes, lane_len)) - 1
     else:
@@ -49,54 +50,55 @@ def plot_state(
         'Meter': (np.arange(state.shape[1], dtype=int) * meters_per_cell),
         'Speed': state
     }
-    
-    custom_colormap = ['#CCC'] + [ color_map[i] for i in np.linspace(0, len(color_map)-1, velocity_max, dtype=int) ]
-    
+
+    custom_colormap = ['#CCC'] + [color_map[i] for i in np.linspace(0, len(color_map) - 1, velocity_max, dtype=int)]
+
     plot = hv.HeatMap(
         gridded_data,
         kdims=['Meter', 'Lane'],
         vdims=hv.Dimension('Speed', range=(-1, velocity_max), soft_range=(-1, velocity_max))
     )
-    
+
     plot.opts(
         responsive=True,
-        aspect=min(4, state.shape[1])/state.shape[0],
+        aspect=min(4, state.shape[1]) / state.shape[0],
         max_height=400,
         default_tools=[],
-        #tools=['hover'],
+        # tools=['hover'],
         toolbar=None,
-        #xticks=gridded_data['Meter'],
+        # xticks=gridded_data['Meter'],
         yticks=gridded_data['Lane'],
         cmap=custom_colormap,
         color_levels=velocity_max + 1,
         colorbar=True
     )
-    
+
     return plot
 
+
 class TrafficSimulationUI:
-    
+
     def ui(self):
         ui = pn.template.MaterialTemplate(title='Traffic Simulation')
-        
+
         run_simulation_button = pn.widgets.Button(name='Simulate', button_type='primary')
-        
+
         self.timestep_player = pn.widgets.DiscretePlayer(
             name='Simulation History Player',
             options=[0],
             value=0,
             loop_policy='loop',
             align='center')
-        
+
         lanes = 1
         lane_len = 100
         n_cars = 20
         v_max = 8
-        
+
         street = Street(lanes, lane_len, n_cars, v_max)
         rules = [DummyShuffleRule()]
         self.runner = Runner(street, rules)
-        
+
         street_plot = pn.bind(
             plot_state,
             history=self.runner.history,
@@ -104,12 +106,12 @@ class TrafficSimulationUI:
             velocity_max=v_max,
             lanes=lanes,
             lane_len=lane_len)
-        
+
         timestep_label = pn.bind(
             lambda t: pn.pane.Markdown(
                 f"Timestep: {t}"),
             t=self.timestep_player)
-        
+
         ui.main.extend([
             pn.Column(
                 '## Traffic Simulation',
@@ -120,28 +122,29 @@ class TrafficSimulationUI:
                     sizing_mode='stretch_width'),
                 self.timestep_player,
                 sizing_mode='stretch_width')])
-        
+
         run_simulation_button.on_click(self.run_simulation)
-        
+
         ui.sidebar.extend([
             pn.WidgetBox(
                 '## Settings',
                 'Click "Simulate" to compute the simulation. Then on the right, click the "Play" replay the simulation history.',
                 run_simulation_button)])
-        
+
         return ui
-        
+
     def run_simulation(self, event: Any) -> None:
         """
         Runs the simulation.
         """
-        
+
         self.runner.run()
-        
+
         self.timestep_player.options = list(range(len(self.runner.history)))
-        
+
         print('Simulation complete.')
 
-sim = TrafficSimulationUI()
 
-pn.serve(sim.ui)
+if __name__ == "__main__":
+    sim = TrafficSimulationUI()
+    pn.serve(sim.ui)
