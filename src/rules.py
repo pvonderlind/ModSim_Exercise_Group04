@@ -66,9 +66,38 @@ class Dawdling(AbstractRule):
 
     def apply(self, state: np.ndarray) -> np.ndarray:
         selected = np.random.choice([0, 1],state.shape, p=[1-self.dawning_fac, self.dawning_fac])
-        
+
         #only reduce cells with vehicles and non stationary vehicles
         check_speed = (state <= 0)
         selected[check_speed] = 0
 
         return state - selected
+
+class MoveForward(AbstractRule):
+    """
+    move forward according to current speed
+    """
+    def get_new_position(self, state: np.ndarray, index: int, speed: int) -> int:
+        """
+        calculate new position for vehicle
+        """
+        new_position = index+speed
+        if(new_position >= len(state)):
+            new_position -= len(state)
+        
+        return new_position
+
+    def apply(self, state: np.ndarray) -> np.ndarray:
+        #create empty street
+        new_state = np.empty(len(state), dtype=int)
+        new_state.fill(-1)
+
+        for index, speed in enumerate(state):
+            #calculate new position only if there is a vehicle
+            if(speed > 0):
+                new_position = self.get_new_position(state, index, speed)
+
+                #insert vehicle at updated position
+                new_state[new_position] = speed
+
+        return new_state
