@@ -55,3 +55,20 @@ class AvoidCollision(AbstractRule):
                     state[index] = self.get_gap(following_vehicles)
 
         return state
+
+class Dawdling(AbstractRule):
+    """
+    reduce vehicle speed by 1 with the
+    probability pd (dawning factor), if not already stationary (0)
+    """
+    def __init__(self, dawning_fac: int):
+        self.dawning_fac = dawning_fac
+
+    def apply(self, state: np.ndarray) -> np.ndarray:
+        selected = np.random.choice([0, 1],state.shape, p=[1-self.dawning_fac, self.dawning_fac])
+        
+        #only reduce cells with vehicles and non stationary vehicles
+        check_speed = (state <= 0)
+        selected[check_speed] = 0
+
+        return state - selected
