@@ -94,9 +94,11 @@ class TrafficSimulationUI:
         lane_len = 100
         n_cars = 20
         v_max = 8
+        dawning_fac = 0.2
 
-        street = Street(lanes, lane_len, n_cars, v_max)
-        rules = [DummyShuffleRule()]
+        street = Street(1, 250, 20, v_max)
+        rules = [Accelerate(v_max), AvoidCollision(), Dawdling(dawning_fac), MoveForward()]
+        runner = Runner(street, rules)
         self.runner = Runner(street, rules)
 
         street_plot = pn.bind(
