@@ -145,8 +145,3 @@ class TrafficSimulationUI:
         self.timestep_player.options = list(range(len(self.runner.history)))
 
         print('Simulation complete.')
-
-
-if __name__ == "__main__":
-    sim = TrafficSimulationUI()
-    pn.serve(sim.ui)
