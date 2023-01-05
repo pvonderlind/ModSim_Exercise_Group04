@@ -97,7 +97,7 @@ class TrafficSimulationUI:
         dawning_fac = 0.2
 
         street = Street(1, 250, 20, v_max)
-        rules = [Accelerate(v_max), AvoidCollision(), Dawdling(dawning_fac), MoveForward()]
+        rules = [Accelerate(v_max), AvoidCollision(), Dawdling(dawning_fac), MoveForward(), MergeBack()]
         runner = Runner(street, rules)
         self.runner = Runner(street, rules)
 
