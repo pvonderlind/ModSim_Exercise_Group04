@@ -1,6 +1,6 @@
 import numpy as np
 
-from ca import AbstractRule
+from src.ca import AbstractRule
 
 
 class DummyShuffleRule(AbstractRule):
@@ -47,12 +47,13 @@ class AvoidCollision(AbstractRule):
         return result[0]
 
     def apply(self, state: np.ndarray) -> np.ndarray:
-        for index, speed in enumerate(state):
-            if(speed>0):
-                following_vehicles = self.check_following_vehicles(state, index, speed)
+        for i, lane in enumerate(state):
+            for index, speed in enumerate(lane):
+                if(speed>0):
+                    following_vehicles = self.check_following_vehicles(state, index, speed)
 
-                if following_vehicles.any():
-                    state[index] = self.get_gap(following_vehicles)
+                    if following_vehicles.any():
+                        state[index] = self.get_gap(following_vehicles)
 
         return state
 
@@ -89,15 +90,15 @@ class MoveForward(AbstractRule):
 
     def apply(self, state: np.ndarray) -> np.ndarray:
         #create empty street
-        new_state = np.empty(len(state), dtype=int)
-        new_state.fill(-1)
+        new_state = np.full_like(state, -1, dtype=int)
 
-        for index, speed in enumerate(state):
-            #calculate new position only if there is a vehicle
-            if(speed > 0):
-                new_position = self.get_new_position(state, index, speed)
+        for i, lane in enumerate(state):
+            for index, speed in enumerate(lane):
+                #calculate new position only if there is a vehicle
+                if(speed > 0):
+                    new_position = self.get_new_position(lane, index, speed)
 
-                #insert vehicle at updated position
-                new_state[new_position] = speed
+                    #insert vehicle at updated position
+                    new_state[i][new_position] = speed
 
         return new_state
