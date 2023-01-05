@@ -1,4 +1,4 @@
-import pn as pn
+import panel as pn
 from src.ui import TrafficSimulationUI
 
 if __name__ == "__main__":

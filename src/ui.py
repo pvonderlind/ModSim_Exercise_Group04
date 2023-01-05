@@ -4,8 +4,8 @@ import panel as pn
 from typing import Any
 import colorcet as cc
 
-from ca import Street, Runner
-from rules import *
+from src.ca import Street, Runner
+from src.rules import *
 
 hv.extension('bokeh')
 pn.extension()
