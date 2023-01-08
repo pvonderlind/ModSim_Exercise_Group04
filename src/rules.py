@@ -113,4 +113,4 @@ class MoveForward(AbstractRule):
 
 class MergeBack(AbstractRule):
     def apply(self, state: np.ndarray) -> np.ndarray:
-        pass
+        return state

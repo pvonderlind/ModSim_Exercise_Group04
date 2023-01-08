@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import List
 import numpy as np
 import random
 from tqdm import tqdm
@@ -55,14 +56,22 @@ class Runner:
 
     def __init__(self,
                  street: Street,
-                 rule_list: [AbstractRule],
+                 rule_list: List[AbstractRule],
                  max_timesteps: int = 250):
         self._street = street
         self._max_timesteps = max_timesteps
         self._rule_list = rule_list
         self.history = []
 
-    def run(self):
+    def run(self, tqdm_widget=None):
+        """
+        When called in the UI, to display the progress a tqdm widget displaying the live
+        progress can be passed as `tqdm_widget`. It is used to loop just like tqdm().
+        """
+        
+        if tqdm_widget:
+            tqdm = tqdm_widget
+            
         print(f"Starting simulation".center(50, '.'))
         for _ in tqdm(range(self._max_timesteps)):
             new_state = self._apply_rules(self._street)
