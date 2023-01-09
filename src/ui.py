@@ -12,7 +12,7 @@ from src.ca import Street, Runner
 from src.rules import *
 
 hv.extension('bokeh')
-pn.extension()
+pn.extension(notifications=True)
 
 class CurrentRunner(param.Parameterized):
     value = param.Parameter(None)
@@ -284,24 +284,29 @@ class TrafficSimulationUI:
         """
         Runs the simulation.
         """
-        
-        street = Street(self.lanes.value, self.lane_len.value, self.n_cars.value, self.v_max.value, self.random_seed.value)
-        rules = []
-        if self.accelerate_checkbox.value:
-            rules.append(Accelerate(self.v_max.value))
-        if self.avoid_collision_checkbox.value:
-            rules.append(AvoidCollision())
-        if self.dawdling_checkbox.value:
-            rules.append(Dawdling(self.dawdling_factor.value, self.random_seed.value))
-        if self.move_forward_checkbox.value:
-            rules.append(MoveForward())
-        if self.merge_back_checkbox.value:
-            rules.append(MergeBack())
-        
-        runner = Runner(street, rules, self.simulation_length.value)
-        
-        runner.run(tqdm_widget=self.simulation_progressb_bar)
+        try:
+            
+            street = Street(self.lanes.value, self.lane_len.value, self.n_cars.value, self.v_max.value, self.random_seed.value)
+            rules = []
+            if self.accelerate_checkbox.value:
+                rules.append(Accelerate(self.v_max.value))
+            if self.avoid_collision_checkbox.value:
+                rules.append(AvoidCollision())
+            if self.dawdling_checkbox.value:
+                rules.append(Dawdling(self.dawdling_factor.value, self.random_seed.value))
+            if self.move_forward_checkbox.value:
+                rules.append(MoveForward())
+            if self.merge_back_checkbox.value:
+                rules.append(MergeBack())
+            
+            runner = Runner(street, rules, self.simulation_length.value)
+            
+            runner.run(tqdm_widget=self.simulation_progressb_bar)
 
+        except Exception as e:
+            pn.state.notifications.error(f'Simulation failed: {e}. Details in console.', duration=10000)
+            raise e
+            
         self.current_runner.value = runner
         
         file = io.BytesIO()
@@ -315,5 +320,3 @@ class TrafficSimulationUI:
         
         self.timestep_player.options = list(range(len(runner.history)))
         self.timestep_player.value = self.timestep_player.options[0]
-
-        print('Simulation complete.')
