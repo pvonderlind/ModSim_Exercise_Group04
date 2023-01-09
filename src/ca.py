@@ -30,10 +30,15 @@ class Street:
     def _init_state(self, seed: int) -> np.ndarray:
         rand_gen = np.random.RandomState(seed)
         velocities = [rand_gen.randint(0, self._v_max) for _ in range(self._n_cars)]
+
         flat_len = self._lanes * self._lane_len
         flat_street = np.full(flat_len, -1)
-        cars = rand_gen.choice(flat_len, self._n_cars)
-        flat_street[cars] = velocities
+        indices = np.arange(flat_street.size)
+        np.random.seed(seed)
+        np.random.shuffle(indices)
+
+        car_idxs = indices[:self._n_cars]
+        flat_street[car_idxs] = velocities
         return flat_street.reshape(self._lanes, self._lane_len)
 
     def update(self, new_state: np.ndarray) -> np.ndarray:
@@ -80,12 +85,13 @@ class Runner:
         for i in tqdm_func(range(self._max_timesteps)):
             if i == 0:
                 initial_state = self._street.get_state()
+                print(f"initial cars:{(initial_state >= 0).sum()}")
                 self.history.append(initial_state)
             else:
                 new_state = self._apply_rules(self._street)
                 self._street.update(new_state)
                 self.history.append(new_state)
-            
+        print(f"End cars: {(self.history[-1] >= 0).sum()}")
         print(f"Ended simulation after {self._max_timesteps} steps!".center(50, '.'))
 
     def _apply_rules(self, street: Street) -> np.ndarray:
