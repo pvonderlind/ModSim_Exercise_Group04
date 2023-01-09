@@ -112,11 +112,12 @@ class MoveForward(AbstractRule):
 class MergeBack(AbstractRule):
     def apply(self, state: np.ndarray) -> np.ndarray:
 
-        lanes = state.shape[0]
-        for i, lane in enumerate(state):
+        for i, lane in reversed(list(enumerate(state))):
             # Last lane can't merge anywhere, so skip it
-            if i == (lanes - 1):
+            if i == 0:
                 break
             for index, speed in enumerate(lane):
-                pass
+                if state[i - 1, index] == -1:
+                    state[i, index] = -1
+                    state[i - 1, index] = speed
         return state
