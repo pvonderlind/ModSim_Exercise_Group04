@@ -28,35 +28,30 @@ class AvoidCollision(AbstractRule):
     if gap to next vehicle is smaller than its speed
     """
 
-    def check_following_vehicles(self, state: np.ndarray, index: int, speed: int) -> np.ndarray:
+    def check_following_vehicles(self, lane: np.ndarray, index: int, speed: int) -> np.ndarray:
         """
         returns array of which following cells contain a vehicle
         """
         # move current vehicle to front
-        shifted_state = np.roll(state, -index)
-        # get following states
-        following_states = shifted_state[1:speed + 1]
+        shifted_state = np.roll(lane, -(index + 1))
+        gap_ahead_of_car = shifted_state[:speed]
+        return gap_ahead_of_car >= 0
 
-        return following_states >= 0
-
-    def get_gap(self, condition: np.ndarray) -> int:
+    def get_gap(self, gap_ahead_of_car: np.ndarray) -> int:
         """
         return gap(nr of cells) between current and following vehicle
         """
-        true_indices = [np.where(condition[j:])[0] for j in range(condition.shape[0])]
-        result = np.array([x[0] if x.size != 0
-                           else int(condition[-1])
-                           for x in true_indices])
-        return result[0]
+        return np.where(gap_ahead_of_car)[0][0]
 
     def apply(self, state: np.ndarray) -> np.ndarray:
         for i, lane in enumerate(state):
             for index, speed in enumerate(lane):
-                if (speed > 0):
-                    following_vehicles = self.check_following_vehicles(state, index, speed)
+                if speed > 0:
+                    gap_ahead_of_car = self.check_following_vehicles(lane, index, speed)
 
-                    if following_vehicles.any():
-                        state[index] = self.get_gap(following_vehicles)
+                    if gap_ahead_of_car.any():
+                        reduced_speed = self.get_gap(gap_ahead_of_car)
+                        state[i, index] = reduced_speed
 
         return state
 
@@ -90,7 +85,8 @@ class MoveForward(AbstractRule):
         calculate new position for vehicle
         """
         new_position = index + speed
-        if (new_position >= len(state)):
+        state_len = state.shape[0]
+        if new_position >= state_len:
             new_position -= len(state)
 
         return new_position
@@ -102,7 +98,7 @@ class MoveForward(AbstractRule):
         for i, lane in enumerate(state):
             for index, speed in enumerate(lane):
                 # calculate new position only if there is a vehicle
-                if (speed > 0):
+                if speed > 0:
                     new_position = self.get_new_position(lane, index, speed)
 
                     # insert vehicle at updated position

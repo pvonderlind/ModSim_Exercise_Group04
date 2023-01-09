@@ -63,7 +63,7 @@ class Runner:
         self._rule_list = rule_list
         self.history = []
 
-    def run(self, tqdm_widget=None):
+    def run(self, tqdm_widget=None, debug_metrics=True):
         """
         When called in the UI, to display the progress a tqdm widget displaying the live
         progress can be passed as `tqdm_widget`. It is used to loop just like tqdm().
@@ -75,6 +75,8 @@ class Runner:
         print(f"Starting simulation".center(50, '.'))
         for _ in tqdm(range(self._max_timesteps)):
             new_state = self._apply_rules(self._street)
+            if debug_metrics:
+                print(f"Current number of cars {(new_state >= 0).sum()}")
             self._street.update(new_state)
             self.history.append(new_state)
         print(f"Ended simulation after {self._max_timesteps} steps!".center(50, '.'))
