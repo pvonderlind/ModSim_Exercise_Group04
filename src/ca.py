@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
 import numpy as np
-import random
 from tqdm import tqdm
 import io
 import pickle
@@ -19,18 +18,21 @@ class Street:
                  lanes: int,
                  lane_len: int,
                  n_cars: int,
-                 v_max: int):
+                 v_max: int,
+                 seed: int):
         self._lanes = lanes
         self._lane_len = lane_len
         self._n_cars = n_cars
         self._v_max = v_max
-        self._state = self._init_state()
+        self._seed = seed
+        self._state = self._init_state(seed)
 
-    def _init_state(self) -> np.ndarray:
-        velocities = [random.randint(0, self._v_max) for _ in range(self._n_cars)]
+    def _init_state(self, seed: int) -> np.ndarray:
+        rand_gen = np.random.RandomState(seed)
+        velocities = [rand_gen.randint(0, self._v_max) for _ in range(self._n_cars)]
         flat_len = self._lanes * self._lane_len
         flat_street = np.full(flat_len, -1)
-        cars = np.random.choice(flat_len, self._n_cars)
+        cars = rand_gen.choice(flat_len, self._n_cars)
         flat_street[cars] = velocities
         return flat_street.reshape(self._lanes, self._lane_len)
 
@@ -65,19 +67,25 @@ class Runner:
         self.history = []
 
     def run(self, tqdm_widget=None):
-        """
-        When called in the UI, to display the progress a tqdm widget displaying the live
-        progress can be passed as `tqdm_widget`. It is used to loop just like tqdm().
-        """
         
+        # When called in the UI, to display the progress a tqdm widget displaying the live
+        # progress can be passed as `tqdm_widget`. It is used to loop just like tqdm().        
         if tqdm_widget:
-            tqdm = tqdm_widget
+            tqdm_func = tqdm_widget
+        else:
+            tqdm_func = tqdm
             
         print(f"Starting simulation".center(50, '.'))
-        for _ in tqdm(range(self._max_timesteps)):
-            new_state = self._apply_rules(self._street)
-            self._street.update(new_state)
-            self.history.append(new_state)
+        
+        for i in tqdm_func(range(self._max_timesteps)):
+            if i == 0:
+                initial_state = self._street.get_state()
+                self.history.append(initial_state)
+            else:
+                new_state = self._apply_rules(self._street)
+                self._street.update(new_state)
+                self.history.append(new_state)
+            
         print(f"Ended simulation after {self._max_timesteps} steps!".center(50, '.'))
 
     def _apply_rules(self, street: Street) -> np.ndarray:
@@ -124,7 +132,7 @@ class Runner:
         
         # create a new street
         sp = serialized_runner['street_parameters']
-        street = Street(sp['_lanes'], sp['_lane_len'], sp['_n_cars'], sp['_v_max'])
+        street = Street(sp['_lanes'], sp['_lane_len'], sp['_n_cars'], sp['_v_max'], sp['_seed'])
         
         # load the history
         with np.load(serialized_runner['history_compressed']) as data:
