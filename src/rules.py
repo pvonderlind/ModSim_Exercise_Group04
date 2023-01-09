@@ -65,10 +65,10 @@ class Dawdling(AbstractRule):
     def __init__(self, dawning_fac: int, seed: int):
         self.dawning_fac = dawning_fac
         self.seed = seed
+        np.random.seed(seed)
 
     def apply(self, state: np.ndarray) -> np.ndarray:
-        rand_gen = np.random.RandomState(self.seed)
-        selected = rand_gen.choice([0, 1], state.shape, p=[1 - self.dawning_fac, self.dawning_fac])
+        selected = np.random.choice([0, 1], state.shape, p=[1 - self.dawning_fac, self.dawning_fac])
 
         # only reduce cells with vehicles and non stationary vehicles
         check_speed = (state <= 0)
@@ -111,4 +111,12 @@ class MoveForward(AbstractRule):
 
 class MergeBack(AbstractRule):
     def apply(self, state: np.ndarray) -> np.ndarray:
+
+        lanes = state.shape[0]
+        for i, lane in enumerate(state):
+            # Last lane can't merge anywhere, so skip it
+            if i == (lanes - 1):
+                break
+            for index, speed in enumerate(lane):
+                pass
         return state
