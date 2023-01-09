@@ -82,14 +82,14 @@ class MoveForward(AbstractRule):
     move forward according to current speed
     """
 
-    def get_new_position(self, state: np.ndarray, index: int, speed: int) -> int:
+    def get_new_position(self, lane: np.ndarray, index: int, speed: int) -> int:
         """
         calculate new position for vehicle
         """
         new_position = index + speed
-        state_len = state.shape[0]
-        if new_position >= state_len:
-            new_position -= len(state)
+        lane_len = lane.shape[0]
+        if new_position >= lane_len:
+            new_position -= lane_len
 
         return new_position
 
@@ -100,11 +100,11 @@ class MoveForward(AbstractRule):
         for i, lane in enumerate(state):
             for index, speed in enumerate(lane):
                 # calculate new position only if there is a vehicle
-                if speed > 0:
+                if speed >= 0:
                     new_position = self.get_new_position(lane, index, speed)
 
                     # insert vehicle at updated position
-                    new_state[i][new_position] = speed
+                    new_state[i, new_position] = speed
 
         return new_state
 
