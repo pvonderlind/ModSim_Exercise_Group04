@@ -3,7 +3,8 @@ from typing import List
 import numpy as np
 import random
 from tqdm import tqdm
-
+import io
+import pickle
 
 class Street:
     """
@@ -84,3 +85,53 @@ class Runner:
         for rule in self._rule_list:
             state = rule.apply(state)
         return state
+    
+    def serialize(self) -> bytes:
+        '''
+        Serializes the runner object to bytes.
+        '''        
+        # create in-memory file-like object
+        history_compressed = io.BytesIO()
+        # save numpy array to file-like object
+        np.savez_compressed(history_compressed, history=np.array(self.history))
+        # reset the file pointer to the beginning, so that the file can be read
+        # otherwise the next read would start at the end of the file
+        # and the file would be seen as empty or corrupted
+        history_compressed.seek(0)
+        
+        # keep only the parameters of the street, not the state
+        street_parameters = self._street.__dict__
+        street_parameters.pop('_state')
+        
+        # keep the list of rules
+        rule_list = self._rule_list
+        
+        serialized_runner = pickle.dumps({
+            'street_parameters': street_parameters,
+            'rule_list': rule_list,
+            'history_compressed': history_compressed
+        })
+        
+        return serialized_runner
+    
+    @classmethod
+    def deserialize(cls, serialized_runner: bytes) -> 'Runner':
+        '''
+        Deserializes the runner object from bytes.
+        '''
+        # load the serialized runner
+        serialized_runner = pickle.loads(serialized_runner)
+        
+        # create a new street
+        sp = serialized_runner['street_parameters']
+        street = Street(sp['_lanes'], sp['_lane_len'], sp['_n_cars'], sp['_v_max'])
+        
+        # load the history
+        with np.load(serialized_runner['history_compressed']) as data:
+            history_ndarray: np.ndarray = data['history']
+        
+        # create a new runner
+        runner = cls(street, serialized_runner['rule_list'])
+        runner.history = list(history_ndarray)
+        
+        return runner
