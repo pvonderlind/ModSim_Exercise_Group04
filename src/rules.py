@@ -111,12 +111,15 @@ class MoveForward(AbstractRule):
 class MergeBack(AbstractRule):
     def apply(self, state: np.ndarray) -> np.ndarray:
 
-        for i, lane in reversed(list(enumerate(state))):
-            # Last lane can't merge anywhere, so skip it
-            if i == 0:
+        # NOTE: 0 is our rightmost lane in the visualization!
+        for i, lane in enumerate(state):
+            # Last lane can't swap places since we do the swapping in reverse order
+            # This is necessary to not allow multiple switches for one car in one call of this rule.
+            if i == state.shape[0] - 1:
                 break
             for index, speed in enumerate(lane):
-                if state[i - 1, index] == -1:
-                    state[i, index] = -1
-                    state[i - 1, index] = speed
+                if state[i, index] == -1:
+                    if state[i + 1, index] != -1:
+                        state[i, index] = state[i+1, index]
+                        state[i + 1, index] = -1
         return state
