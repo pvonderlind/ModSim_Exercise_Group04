@@ -71,6 +71,7 @@ def plot_state(
     )
 
     plot.opts(
+        title=f'Street at timestep {timestep}',
         responsive=True,
         aspect=min(4, state.shape[1]) / state.shape[0],
         max_height=400,
@@ -109,18 +110,14 @@ def create_simulation_parameter_info_card(
     street = runner._street
     rules = runner._rule_list
     
-    info = f'''
-## Parameters
-
-### Street
-- Lanes: {street._lanes}
-- Lane length: {street._lane_len} cells
-- Cars: {street._n_cars}
-
-### Rules'''
+    info = f'## Parameters\n### Street\n'
+    info += f'- Lanes: {street._lanes}\n- Lane length: {street._lane_len} cells\n- Cars: {street._n_cars}\n'
+    info += '### Rules'
     
     for rule in rules:
         info += f'\n- {rule.__class__.__name__}: {rule.__dict__}'
+        
+    info += f'\n### Simulation\n- Random seed: {runner._street._seed}\n- Timesteps: {len(runner.history)}'
     
     return pn.pane.Markdown(info, extensions=['nl2br'])
 
@@ -250,11 +247,6 @@ class TrafficSimulationUI:
             loop_policy='loop',
             align='center')
 
-        timestep_label = pn.bind(
-            lambda t: pn.pane.Markdown(
-                f'### Replay\n- Timestep: {t}'),
-            t=self.timestep_player)
-
         street_plot = pn.bind(
             plot_state,
             runner=self.current_runner.param.value,
@@ -268,7 +260,6 @@ class TrafficSimulationUI:
             pn.Column(
                 '## Simulation history',
                 self.run_parameter_info,
-                timestep_label,
                 pn.Row(
                     street_plot,
                     align='center',
