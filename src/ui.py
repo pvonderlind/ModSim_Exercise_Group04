@@ -73,7 +73,7 @@ def plot_state(
     plot.opts(
         title=f'Street at timestep {timestep}',
         responsive=True,
-        aspect=min(4, state.shape[1]) / state.shape[0],
+        aspect=4,
         max_height=400,
         default_tools=[],
         # tools=['hover'],
