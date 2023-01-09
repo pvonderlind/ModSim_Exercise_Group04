@@ -5,12 +5,14 @@ from typing import Any
 import colorcet as cc
 from bokeh.models.formatters import PrintfTickFormatter
 import param
+import io
+from datetime import datetime
 
 from src.ca import Street, Runner
 from src.rules import *
 
 hv.extension('bokeh')
-pn.extension()
+pn.extension(notifications=True)
 
 class CurrentRunner(param.Parameterized):
     value = param.Parameter(None)
@@ -69,6 +71,7 @@ def plot_state(
     )
 
     plot.opts(
+        title=f'Street at timestep {timestep}',
         responsive=True,
         aspect=min(4, state.shape[1]) / state.shape[0],
         max_height=400,
@@ -107,18 +110,14 @@ def create_simulation_parameter_info_card(
     street = runner._street
     rules = runner._rule_list
     
-    info = f'''
-## Parameters
-
-### Street
-- Lanes: {street._lanes}
-- Lane length: {street._lane_len} cells
-- Cars: {street._n_cars}
-
-### Rules'''
+    info = f'## Parameters\n### Street\n'
+    info += f'- Lanes: {street._lanes}\n- Lane length: {street._lane_len} cells\n- Cars: {street._n_cars}\n'
+    info += '### Rules'
     
     for rule in rules:
         info += f'\n- {rule.__class__.__name__}: {rule.__dict__}'
+        
+    info += f'\n### Simulation\n- Random seed: {runner._street._seed}\n- Timesteps: {len(runner.history)}'
     
     return pn.pane.Markdown(info, extensions=['nl2br'])
 
@@ -212,19 +211,34 @@ class TrafficSimulationUI:
             end=1000,
             format=PrintfTickFormatter(format='%d timesteps'))
         
+        self.random_seed = pn.widgets.IntInput(
+            name='Random seed',
+            start=0,
+            value=42,
+            end=99999)
+        
         self.run_simulation_button = pn.widgets.Button(name='Simulate', button_type='primary')
-        self.simulation_progressb_bar = pn.widgets.Tqdm(sizing_mode='stretch_width', width_policy='max')
+        self.simulation_progressb_bar = pn.widgets.Tqdm(text='Progress', sizing_mode='stretch_width', width_policy='max')
         self.run_simulation_button.on_click(self.run_simulation)
         
-        self.ui.sidebar.extend([
-            pn.Spacer(height=spacer_height),
-            self.simulation_length,
-            self.run_simulation_button,
-            self.simulation_progressb_bar])
+        self.ui.sidebar.append(
+            pn.WidgetBox(
+                '## Simulation',
+                self.random_seed,
+                self.simulation_length,
+                pn.Spacer(height=spacer_height),
+                self.run_simulation_button,
+                self.simulation_progressb_bar))
         
         # Main contents
-
+        
         self.current_runner = CurrentRunner(value=None) #Runner(Street(self.lanes.value, self.lane_len.value, self.n_cars.value, self.v_max.value), [])
+        
+        self.export_simulation_button = pn.widgets.FileDownload(
+            None,
+            align='center')
+        self.export_simulation_button.disabled = True
+        self.export_simulation_button.aspect_ratio = 12
         
         self.timestep_player = pn.widgets.DiscretePlayer(
             name='Simulation History Player',
@@ -232,11 +246,6 @@ class TrafficSimulationUI:
             value=0,
             loop_policy='loop',
             align='center')
-
-        timestep_label = pn.bind(
-            lambda t: pn.pane.Markdown(
-                f'- Timestep: {t}'),
-            t=self.timestep_player)
 
         street_plot = pn.bind(
             plot_state,
@@ -250,13 +259,13 @@ class TrafficSimulationUI:
         self.ui.main.extend([
             pn.Column(
                 '## Simulation history',
-                timestep_label,
+                self.run_parameter_info,
                 pn.Row(
                     street_plot,
                     align='center',
                     sizing_mode='stretch_width'),
                 self.timestep_player,
-                self.run_parameter_info,
+                self.export_simulation_button,
                 sizing_mode='stretch_width')])
         
     def get_user_interface(self):
@@ -266,27 +275,39 @@ class TrafficSimulationUI:
         """
         Runs the simulation.
         """
-        
-        street = Street(self.lanes.value, self.lane_len.value, self.n_cars.value, self.v_max.value)
-        rules = []
-        if self.accelerate_checkbox.value:
-            rules.append(Accelerate(self.v_max.value))
-        if self.avoid_collision_checkbox.value:
-            rules.append(AvoidCollision())
-        if self.dawdling_checkbox.value:
-            rules.append(Dawdling(self.dawdling_factor.value))
-        if self.move_forward_checkbox.value:
-            rules.append(MoveForward())
-        if self.merge_back_checkbox.value:
-            rules.append(MergeBack())
-        
-        runner = Runner(street, rules, self.simulation_length.value)
-        
-        runner.run(tqdm_widget=self.simulation_progressb_bar)
+        try:
+            
+            street = Street(self.lanes.value, self.lane_len.value, self.n_cars.value, self.v_max.value, self.random_seed.value)
+            rules = []
+            if self.accelerate_checkbox.value:
+                rules.append(Accelerate(self.v_max.value))
+            if self.avoid_collision_checkbox.value:
+                rules.append(AvoidCollision())
+            if self.dawdling_checkbox.value:
+                rules.append(Dawdling(self.dawdling_factor.value, self.random_seed.value))
+            if self.move_forward_checkbox.value:
+                rules.append(MoveForward())
+            if self.merge_back_checkbox.value:
+                rules.append(MergeBack())
+            
+            runner = Runner(street, rules, self.simulation_length.value)
+            
+            runner.run(tqdm_widget=self.simulation_progressb_bar)
 
+        except Exception as e:
+            pn.state.notifications.error(f'Simulation failed: {e}. Details in console.', duration=10000)
+            raise e
+            
         self.current_runner.value = runner
+        
+        file = io.BytesIO()
+        file.write(runner.serialize())
+        file.seek(0)
+        
+        self.export_simulation_button.filename = f'traffic_jam_simulation_{datetime.now().strftime("%Y%m%d_%H%M%S")}.bin'
+        self.export_simulation_button.file = file
+        self.export_simulation_button.disabled = False
+        self.export_simulation_button.button_type = 'primary'
         
         self.timestep_player.options = list(range(len(runner.history)))
         self.timestep_player.value = self.timestep_player.options[0]
-
-        print('Simulation complete.')

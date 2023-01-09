@@ -62,11 +62,13 @@ class Dawdling(AbstractRule):
     probability pd (dawning factor), if not already stationary (0)
     """
 
-    def __init__(self, dawning_fac: int):
+    def __init__(self, dawning_fac: int, seed: int):
         self.dawning_fac = dawning_fac
+        self.seed = seed
 
     def apply(self, state: np.ndarray) -> np.ndarray:
-        selected = np.random.choice([0, 1], state.shape, p=[1 - self.dawning_fac, self.dawning_fac])
+        rand_gen = np.random.RandomState(self.seed)
+        selected = rand_gen.choice([0, 1], state.shape, p=[1 - self.dawning_fac, self.dawning_fac])
 
         # only reduce cells with vehicles and non stationary vehicles
         check_speed = (state <= 0)
