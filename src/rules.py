@@ -64,11 +64,10 @@ class Dawdling(AbstractRule):
 
     def __init__(self, dawning_fac: int, seed: int):
         self.dawning_fac = dawning_fac
-        self.seed = seed
-        np.random.seed(seed)
+        self.rand_gen = np.random.RandomState(seed)
 
     def apply(self, state: np.ndarray) -> np.ndarray:
-        selected = np.random.choice([0, 1], state.shape, p=[1 - self.dawning_fac, self.dawning_fac])
+        selected = self.rand_gen.choice([0, 1], state.shape, p=[1 - self.dawning_fac, self.dawning_fac])
 
         # only reduce cells with vehicles and non stationary vehicles
         check_speed = (state <= 0)
