@@ -170,7 +170,7 @@ class TrafficSimulationUI:
             format=PrintfTickFormatter(format='%d cells'))
         
         # AvoidCollision rule
-        self.avoid_collision_checkbox = pn.widgets.Checkbox(name='Avoid collision', value=True)
+        self.avoid_collision_checkbox = pn.widgets.Checkbox(name='Avoid collision/ Take Over', value=True)
         
         # Dawdling rule
         self.dawdling_checkbox = pn.widgets.Checkbox(name='Dawdling', value=True)
