@@ -22,11 +22,36 @@ class Accelerate(AbstractRule):
         return state
 
 
-class AvoidCollision(AbstractRule):
+class BreakOrTakeOver(AbstractRule):
     """
     reduce vehicle speed to gap size, 
     if gap to next vehicle is smaller than its speed
+
+    If there is space to the left of the vehicle with the un-braked
+    speed, it is allowed to take over and switch to the left lane.
     """
+
+    def apply(self, state: np.ndarray) -> np.ndarray:
+        cars_indices_that_took_over = []
+        for i, lane in enumerate(state):
+            for index, speed in enumerate(lane):
+                if index in cars_indices_that_took_over:
+                    continue
+                if speed > 0:
+                    gap_ahead_of_car = self.check_following_vehicles(lane, index, speed)
+
+                    if gap_ahead_of_car.any():
+                        # Car is ahead, check to take over from the left, leftmost lane can't take over
+                        if (i < (state.shape[0] - 1)) and self.is_left_lane_clear(state, i, index, speed):
+                            state[i, index] = -1
+                            state[i + 1, index] = speed
+                            cars_indices_that_took_over.append(index)
+                        else:
+                            reduced_speed = self.get_gap(gap_ahead_of_car)
+                            state[i, index] = reduced_speed
+
+            cars_indices_that_took_over = []
+        return state
 
     def check_following_vehicles(self, lane: np.ndarray, index: int, speed: int) -> np.ndarray:
         """
@@ -37,23 +62,15 @@ class AvoidCollision(AbstractRule):
         gap_ahead_of_car = shifted_state[:speed]
         return gap_ahead_of_car >= 0
 
+    def is_left_lane_clear(self, state: np.ndarray, lane_idx: int, index: int, speed: int) -> bool:
+        left_gap = self.check_following_vehicles(state[lane_idx + 1], index, speed)
+        return not left_gap.any()
+
     def get_gap(self, gap_ahead_of_car: np.ndarray) -> int:
         """
         return gap(nr of cells) between current and following vehicle
         """
         return np.where(gap_ahead_of_car)[0][0]
-
-    def apply(self, state: np.ndarray) -> np.ndarray:
-        for i, lane in enumerate(state):
-            for index, speed in enumerate(lane):
-                if speed > 0:
-                    gap_ahead_of_car = self.check_following_vehicles(lane, index, speed)
-
-                    if gap_ahead_of_car.any():
-                        reduced_speed = self.get_gap(gap_ahead_of_car)
-                        state[i, index] = reduced_speed
-
-        return state
 
 
 class Dawdling(AbstractRule):
@@ -120,6 +137,6 @@ class MergeBack(AbstractRule):
             for index, speed in enumerate(lane):
                 if state[i, index] == -1:
                     if state[i + 1, index] != -1:
-                        state[i, index] = state[i+1, index]
+                        state[i, index] = state[i + 1, index]
                         state[i + 1, index] = -1
         return state

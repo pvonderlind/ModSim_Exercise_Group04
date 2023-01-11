@@ -282,7 +282,7 @@ class TrafficSimulationUI:
             if self.accelerate_checkbox.value:
                 rules.append(Accelerate(self.v_max.value))
             if self.avoid_collision_checkbox.value:
-                rules.append(AvoidCollision())
+                rules.append(BreakOrTakeOver())
             if self.dawdling_checkbox.value:
                 rules.append(Dawdling(self.dawdling_factor.value, self.random_seed.value))
             if self.move_forward_checkbox.value:
