@@ -94,7 +94,10 @@ class Runner:
         print(f"Ended simulation after {self._max_timesteps} steps!".center(50, '.'))
 
     def _apply_rules(self, street: Street) -> np.ndarray:
-        state = street.get_state()
+        # Some rules might accidentally change the state object,
+        # which then changes the object in the history.
+        # To avoid this, we create a copy of the state object.        
+        state = street.get_state().copy()
         for rule in self._rule_list:
             state = rule.apply(state)
         return state

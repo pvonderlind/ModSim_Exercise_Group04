@@ -4,6 +4,7 @@ import panel as pn
 from typing import Any
 import colorcet as cc
 from bokeh.models.formatters import PrintfTickFormatter
+from bokeh.models import FixedTicker
 import param
 import io
 from datetime import datetime
@@ -62,7 +63,9 @@ def plot_state(
     }
     
     color_map = cc.bgy
-    custom_colormap = ['#CCC'] + [color_map[i] for i in np.linspace(0, len(color_map) - 1, velocity_max, dtype=int)]
+    custom_colormap = ['#cccccc'] + [color_map[i] for i in np.linspace(0, (len(color_map) - 1), (velocity_max + 1), dtype=int)]
+    color_levels = (np.arange(-1, (velocity_max + 2)) - 0.5).tolist()
+    colorbar_ticks = np.arange(-1, (velocity_max + 1)).tolist()
 
     plot = hv.HeatMap(
         gridded_data,
@@ -81,8 +84,9 @@ def plot_state(
         # xticks=gridded_data['Meter'],
         yticks=gridded_data['Lane'],
         cmap=custom_colormap,
-        color_levels=velocity_max + 1,
-        colorbar=True
+        color_levels=color_levels,
+        colorbar=True,
+        colorbar_opts={ 'ticker': FixedTicker(ticks=colorbar_ticks) },
     )
 
     return plot
