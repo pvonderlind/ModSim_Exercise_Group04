@@ -63,6 +63,8 @@ class BreakOrTakeOver(AbstractRule):
         return gap_ahead_of_car >= 0
 
     def is_left_lane_clear(self, state: np.ndarray, lane_idx: int, index: int, speed: int) -> bool:
+        if state[lane_idx + 1, index] != -1:
+            return False
         left_gap = self.check_following_vehicles(state[lane_idx + 1], index, speed)
         return not left_gap.any()
 
