@@ -90,7 +90,6 @@ class Runner:
                 new_state = self._apply_rules(self._street)
                 self._street.update(new_state)
                 self.history.append(new_state)
-            print((self.history[-1] >= 0).sum())
         print(f"Ended simulation after {self._max_timesteps} steps!".center(50, '.'))
 
     def _apply_rules(self, street: Street) -> np.ndarray:
