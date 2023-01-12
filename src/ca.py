@@ -103,11 +103,30 @@ class Runner:
             state = rule.apply(state)
         return state
 
-    def _avg_speed_metric(self) -> float:
-        return 0
+    def metric_avg_rel_speed(self) -> np.ndarray:
+        """
+        Returns the average relative speed of all cars as a list for each timestep.
+        Relative speed is defined as the ratio of the car's speed to the maximum speed (v_max).
+        """
+        if len(self.history) == 0:
+            return np.zeros(self._max_timesteps)
+        history = np.array(self.history)
+        #car_speeds = history.
+        means = history.mean(axis=(1,2), where=(history >= 0))
+        return means / self._street._v_max
 
-    def _car_throughput_metric(self) -> int:
-        return 0
+    def metric_car_throughput(self) -> int:
+        """
+        Returns the number of cars that are in the last stretch of the street for each timestep.
+        The last stretch is defined as the rightmost 10% of the street.
+        """
+        if len(self.history) == 0:
+            return np.zeros(self._max_timesteps)
+        percentage = 0.1
+        history = np.array(self.history)
+        street_last_stretch = history[:,:, -int(self._street._lane_len * percentage):]
+        counts = np.where((street_last_stretch >= 0), 1, 0).sum(axis=(1,2))
+        return counts
 
     def serialize(self) -> bytes:
         '''
