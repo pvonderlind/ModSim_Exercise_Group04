@@ -132,9 +132,7 @@ class Runner:
         serialized_runner = pickle.dumps({
             'street_parameters': street_parameters,
             'rule_list': rule_list,
-            'history_compressed': history_compressed,
-            'avg_speed': self._avg_speed_metric(),
-            'car_throughput': self._car_throughput_metric()
+            'history_compressed': history_compressed
         })
 
         return serialized_runner
