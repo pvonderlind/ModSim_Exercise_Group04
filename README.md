@@ -53,4 +53,4 @@ As a start, click the blue "Simulate" button on the bottom left. The simulation 
 
 ## Documentation
 
-A report draft is available at: https://www.overleaf.com/7462244329cmmnqhkhbrbr
+The report can be found in [Report_Group4_TrafficJam.pdf](https://github.com/pvonderlind/ModSim_Exercise_Group04/blob/main/Report_Group4_TrafficJam.pdf) and the source is available in [Overleaf](https://www.overleaf.com/7462244329cmmnqhkhbrbr).
